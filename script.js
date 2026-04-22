@@ -1,21 +1,24 @@
 // STORAGE KEY
-const STORAGE_KEY = "lnf_lost_found_items";
+const STORAGE_KEY = "lnf_lost_found_img";
 
-// Global items array
-let items = [];
+let items = [];           // array of item objects
+let currentImageData = null;   // base64 string for new report preview
 
 // DOM elements
 const itemsContainer = document.getElementById("itemsContainer");
 const reportForm = document.getElementById("reportForm");
 const formFeedback = document.getElementById("formFeedback");
 const itemsCountSpan = document.getElementById("itemsCount");
+const imageInput = document.getElementById("imageInput");
+const uploadTrigger = document.getElementById("uploadTrigger");
+const imagePreviewContainer = document.getElementById("imagePreviewContainer");
 
 // Helper: save to localStorage
 function persistItems() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 }
 
-// Load items from localStorage (no sample data)
+// Load from localStorage (no sample data)
 function loadItems() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -23,7 +26,7 @@ function loadItems() {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed)) {
                 items = parsed;
-                // ensure each item has required fields and valid status (lost/found)
+                // sanitize & ensure fields
                 items = items.filter(item => item && typeof item === 'object').map(item => ({
                     id: item.id,
                     name: item.name || "Unnamed",
@@ -32,29 +35,24 @@ function loadItems() {
                     date: item.date || "",
                     contact: item.contact || "",
                     status: (item.status === 'found') ? 'found' : 'lost',
+                    imageBase64: item.imageBase64 || null,
                     createdAt: item.createdAt || item.id || Date.now()
                 }));
-            } else {
-                items = [];
-            }
-        } catch (e) {
-            items = [];
-        }
+            } else items = [];
+        } catch (e) { items = []; }
     } else {
-        // first time visitor: empty array, no sample data
-        items = [];
+        items = [];   // completely empty for new users
     }
-    // sort by newest first (most recent creation)
-    items.sort((a, b) => (b.createdAt || b.id) - (a.createdAt || a.id));
+    // sort newest first
+    items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }
 
-// Update item count display
-function updateItemsCount() {
-    const total = items.length;
-    itemsCountSpan.textContent = `${total} ${total === 1 ? 'item' : 'items'}`;
+// update item count badge
+function updateCount() {
+    itemsCountSpan.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
 }
 
-// XSS protection
+// escape HTML
 function escapeHtml(str) {
     if (!str) return "";
     return str.replace(/[&<>]/g, function (m) {
@@ -65,51 +63,41 @@ function escapeHtml(str) {
     });
 }
 
-// Show temporary feedback message
+// show temporary feedback
 function showFeedback(msg, isError = false) {
     formFeedback.textContent = msg;
     formFeedback.style.color = isError ? '#c2412c' : '#2f6b47';
     setTimeout(() => {
-        if (formFeedback.textContent === msg) {
-            formFeedback.textContent = '';
-        }
+        if (formFeedback.textContent === msg) formFeedback.textContent = '';
     }, 2800);
 }
 
-// Render all items into grid (cards)
+// render all items as cards
 function renderItems() {
     if (!itemsContainer) return;
-
     if (items.length === 0) {
-        itemsContainer.innerHTML = `<div class="empty-state">✨ No lost items reported yet.<br>Use the form to report something missing.</div>`;
-        updateItemsCount();
+        itemsContainer.innerHTML = `<div class="empty-state">✨ No lost items reported yet.<br>Use the form above to report something missing.</div>`;
+        updateCount();
         return;
     }
 
-    let cardsHTML = '';
+    let html = '';
     for (let item of items) {
-        // format date for display
-        let displayDate = item.date;
-        if (item.date && item.date.match(/\d{4}-\d{2}-\d{2}/)) {
-            try {
-                const parsedDate = new Date(item.date);
-                if (!isNaN(parsedDate.getTime())) {
-                    displayDate = parsedDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-                }
-            } catch (e) { }
-        }
-
         const isLost = item.status === 'lost';
         const statusClass = isLost ? 'lost' : 'found';
         const statusLabel = isLost ? 'LOST' : 'FOUND';
+        const displayDate = formatDate(item.date);
+        const imageHtml = item.imageBase64
+            ? `<img class="card-image" src="${escapeHtml(item.imageBase64)}" alt="item photo" loading="lazy">`
+            : `<div class="card-image" style="background: #eef2f7; display:flex; align-items:center; justify-content:center; font-size: 2rem;">📷</div>`;
 
-        // Mark as Found button only appears if status is 'lost'
         const markButtonHtml = isLost
             ? `<button class="mark-found-btn" data-id="${item.id}" data-action="markFound">✓ mark as found</button>`
-            : '';
+            : `<button class="mark-found-btn" disabled style="opacity:0.6;">✓ found</button>`;
 
-        cardsHTML += `
+        html += `
             <div class="item-card" data-item-id="${item.id}">
+                ${imageHtml}
                 <div class="card-row">
                     <div class="item-name">${escapeHtml(item.name)}</div>
                     <div class="status-badge ${statusClass}">${statusLabel}</div>
@@ -128,118 +116,136 @@ function renderItems() {
                 </div>
                 <div class="card-actions">
                     ${markButtonHtml}
-                    <button class="delete-btn" data-id="${item.id}" data-action="delete" title="remove item">🗑️</button>
+                    <button class="delete-btn" data-id="${item.id}" data-action="delete" title="remove">🗑️</button>
                 </div>
             </div>
         `;
     }
-
-    itemsContainer.innerHTML = cardsHTML;
-    updateItemsCount();
+    itemsContainer.innerHTML = html;
+    updateCount();
 }
 
-// Add new item (always status = 'lost')
+function formatDate(dateStr) {
+    if (!dateStr) return "Unknown date";
+    if (dateStr.match(/\d{4}-\d{2}-\d{2}/)) {
+        try {
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        } catch (e) { }
+    }
+    return dateStr;
+}
+
+// Image preview handling
+function setupImageUpload() {
+    uploadTrigger.addEventListener('click', () => imageInput.click());
+    imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png') && !file.type.match('image/jpg')) {
+            showFeedback("Please select a valid image (jpg, png, jpeg).", true);
+            imageInput.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+            currentImageData = ev.target.result;
+            displayImagePreview(currentImageData);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function displayImagePreview(dataUrl) {
+    imagePreviewContainer.innerHTML = `<div style="position:relative; display:inline-block;"><img src="${dataUrl}" class="preview-img" alt="preview"><button type="button" class="remove-img" id="removePreviewBtn">✖ remove</button></div>`;
+    const removeBtn = document.getElementById('removePreviewBtn');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentImageData = null;
+            imagePreviewContainer.innerHTML = '';
+            imageInput.value = '';
+        });
+    }
+}
+
+function resetImagePreview() {
+    currentImageData = null;
+    imagePreviewContainer.innerHTML = '';
+    imageInput.value = '';
+}
+
+// Add new item (always status 'lost')
 function addNewItem(event) {
     event.preventDefault();
+    const name = document.getElementById("itemName").value.trim();
+    const location = document.getElementById("location").value.trim();
+    const date = document.getElementById("date").value;
+    const contact = document.getElementById("contact").value.trim();
+    const description = document.getElementById("description").value.trim();
 
-    const nameInput = document.getElementById("itemName");
-    const locationInput = document.getElementById("location");
-    const dateInput = document.getElementById("date");
-    const contactInput = document.getElementById("contact");
-    const descriptionInput = document.getElementById("description");
+    if (!name) { showFeedback("Item name is required", true); return; }
+    if (!location) { showFeedback("Location is required", true); return; }
+    if (!date) { showFeedback("Date is required", true); return; }
+    if (!contact) { showFeedback("Contact info is required", true); return; }
+    if (!description) { showFeedback("Description is required", true); return; }
 
-    const name = nameInput.value.trim();
-    const location = locationInput.value.trim();
-    const date = dateInput.value;
-    const contact = contactInput.value.trim();
-    const description = descriptionInput.value.trim();
-
-    // validation
-    if (!name) {
-        showFeedback("Please enter item name.", true);
-        return;
-    }
-    if (!location) {
-        showFeedback("Location is required (where it was lost).", true);
-        return;
-    }
-    if (!date) {
-        showFeedback("Please select the date when it was lost.", true);
-        return;
-    }
-    if (!contact) {
-        showFeedback("Contact info is required (email or phone).", true);
-        return;
-    }
-    if (!description) {
-        showFeedback("Please add a brief description.", true);
-        return;
-    }
-
-    // new item object, always status = 'lost'
     const newItem = {
-        id: Date.now() + Math.floor(Math.random() * 10000),
+        id: Date.now() + Math.floor(Math.random() * 100000),
         name: name,
         description: description,
         location: location,
         date: date,
         contact: contact,
         status: "lost",
+        imageBase64: currentImageData || null,
         createdAt: Date.now()
     };
 
-    items.unshift(newItem);   // newest at the top
+    items.unshift(newItem);
     persistItems();
     renderItems();
 
-    // reset form
+    // reset form and image preview
     reportForm.reset();
-    // set today's date again for convenience
     const today = new Date().toISOString().split('T')[0];
-    dateInput.value = today;
-
-    showFeedback("✓ Item reported as LOST. It appears in the list above.", false);
-
-    // optional scroll to the new card
+    document.getElementById("date").value = today;
+    resetImagePreview();
+    showFeedback("✓ Lost item reported with image (if uploaded).", false);
     setTimeout(() => {
-        const firstCard = document.querySelector('.item-card');
-        if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        document.querySelector('.items-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
 }
 
-// Mark item as Found (change status from 'lost' to 'found')
+// Mark as Found
 function markItemAsFound(itemId) {
-    const targetItem = items.find(item => item.id == itemId);
-    if (!targetItem) return;
-    if (targetItem.status === 'found') {
-        showFeedback("Item is already marked as found.", false);
+    const target = items.find(i => i.id == itemId);
+    if (!target) return;
+    if (target.status === 'found') {
+        showFeedback("Already marked as found", false);
         return;
     }
-    // update status
-    targetItem.status = 'found';
+    target.status = 'found';
     persistItems();
     renderItems();
-    showFeedback(`✔️ "${targetItem.name}" marked as FOUND.`, false);
+    showFeedback(`✔️ "${target.name}" marked as FOUND`, false);
 }
 
 // Delete item
 function deleteItem(itemId) {
-    const itemToDelete = items.find(item => item.id == itemId);
-    if (!itemToDelete) return;
-    const confirmDelete = confirm(`Remove "${itemToDelete.name}" permanently?`);
-    if (!confirmDelete) return;
-
-    const newItems = items.filter(item => item.id != itemId);
-    items = newItems;
-    persistItems();
-    renderItems();
-    showFeedback(`"${itemToDelete.name}" removed from list.`, false);
+    const item = items.find(i => i.id == itemId);
+    if (!item) return;
+    if (confirm(`Remove "${item.name}" permanently?`)) {
+        items = items.filter(i => i.id != itemId);
+        persistItems();
+        renderItems();
+        showFeedback(`"${item.name}" deleted`, false);
+    }
 }
 
-// Event delegation for dynamic card actions
+// Event delegation for card actions
 function handleContainerClicks(e) {
     const target = e.target;
-    // Mark as Found button
     const markBtn = target.closest('.mark-found-btn');
     if (markBtn && markBtn.dataset.action === 'markFound') {
         const id = markBtn.getAttribute('data-id');
@@ -247,8 +253,6 @@ function handleContainerClicks(e) {
         e.preventDefault();
         return;
     }
-
-    // Delete button
     const delBtn = target.closest('.delete-btn');
     if (delBtn && delBtn.dataset.action === 'delete') {
         const id = delBtn.getAttribute('data-id');
@@ -258,7 +262,7 @@ function handleContainerClicks(e) {
     }
 }
 
-// Set today's date as default in the date picker
+// Set default date in form
 function setDefaultDate() {
     const dateField = document.getElementById("date");
     if (dateField && !dateField.value) {
@@ -267,15 +271,15 @@ function setDefaultDate() {
     }
 }
 
-// Initialization
+// Initialize app with empty storage (no sample data)
 function init() {
-    loadItems();          // loads from localStorage (empty for new users)
+    loadItems();     // loads from localStorage, empty for first-timers
     renderItems();
     setDefaultDate();
+    setupImageUpload();
     reportForm.addEventListener("submit", addNewItem);
     itemsContainer.addEventListener("click", handleContainerClicks);
-
-    // Ensure that if items array is empty, localStorage reflects that (no leftover seed)
+    // make sure if items are empty, localstorage is empty (no seeding)
     if (items.length === 0) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
     }
