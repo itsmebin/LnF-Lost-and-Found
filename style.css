@@ -1,0 +1,334 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #f6f9fc;
+    color: #1a2c3e;
+    line-height: 1.5;
+    padding: 2rem 1.5rem;
+}
+
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* header */
+.hero {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.hero h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    background: linear-gradient(145deg, #1f2f3a, #2c3f4f);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.hero p {
+    color: #5b6f82;
+    margin-top: 0.4rem;
+    font-weight: 400;
+}
+
+/* form card */
+.form-card {
+    background: white;
+    border-radius: 1.75rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.03);
+    padding: 1.8rem;
+    margin-bottom: 2.5rem;
+    border: 1px solid #eef2f8;
+    transition: box-shadow 0.2s;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.2rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.input-group.full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #4b6379;
+}
+
+input,
+textarea {
+    font-family: 'Inter', monospace;
+    border: 1px solid #e2eaf1;
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    background: #ffffff;
+    transition: all 0.2s;
+    outline: none;
+    color: #1e2f3f;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #9bb1c4;
+    box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.12);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 85px;
+}
+
+.btn-submit {
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 2.2rem;
+    padding: 0.9rem 1.6rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 0.6rem;
+    letter-spacing: 0.2px;
+}
+
+.btn-submit:hover {
+    background: #1e2f3f;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px -12px rgba(0, 0, 0, 0.2);
+}
+
+.form-feedback {
+    margin-top: 0.8rem;
+    font-size: 0.8rem;
+    text-align: center;
+    color: #d97746;
+    min-height: 2rem;
+}
+
+/* items grid */
+.items-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.items-header h2 {
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: #2f4357;
+}
+
+.items-count {
+    font-size: 0.8rem;
+    background: #eef2f7;
+    padding: 0.25rem 0.9rem;
+    border-radius: 30px;
+    color: #4a617c;
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 1.8rem;
+}
+
+.empty-state {
+    background: #ffffffdd;
+    backdrop-filter: blur(2px);
+    border-radius: 2rem;
+    text-align: center;
+    padding: 3.5rem 2rem;
+    color: #6c869e;
+    font-weight: 500;
+    border: 1px dashed #cddfea;
+    grid-column: 1 / -1;
+}
+
+.item-card {
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.02), 0 2px 6px rgba(0, 0, 0, 0.05);
+    padding: 1.3rem 1.4rem 1.5rem;
+    transition: all 0.25s ease;
+    border: 1px solid #edf2f7;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1);
+    border-color: #e2eaf2;
+}
+
+.card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.6rem;
+}
+
+.item-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #0f2b38;
+    word-break: break-word;
+}
+
+.status-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.3rem 0.85rem;
+    border-radius: 2rem;
+    text-transform: uppercase;
+    background: #f1f4f9;
+    color: #2c3e50;
+}
+
+.status-badge.lost {
+    background: #ffe8e5;
+    color: #bc4a2c;
+}
+
+.status-badge.found {
+    background: #e1f7ea;
+    color: #1f7840;
+}
+
+.item-description {
+    color: #2b4358;
+    font-size: 0.85rem;
+    margin: 0.6rem 0 0.9rem;
+    line-height: 1.45;
+    background: #fafdff;
+    padding: 0.4rem 0;
+    border-radius: 12px;
+}
+
+.detail-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    color: #4f6b84;
+    flex-wrap: wrap;
+}
+
+.detail-label {
+    font-weight: 600;
+    min-width: 70px;
+    color: #3e5a74;
+}
+
+.detail-value {
+    word-break: break-word;
+}
+
+.contact-line {
+    margin-top: 0.9rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #ecf3f8;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #2f6b47;
+}
+
+.card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.7rem;
+    margin-top: 1rem;
+    align-items: center;
+}
+
+.mark-found-btn {
+    background: #eef2f7;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.45rem 1rem;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: 0.2s;
+    color: #2c5a3b;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.mark-found-btn:hover {
+    background: #cbe5d6;
+    color: #1b4b2e;
+    transform: scale(0.96);
+}
+
+.delete-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #98aebe;
+    transition: 0.2s;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 40px;
+}
+
+.delete-btn:hover {
+    background: #ffe6e3;
+    color: #c2412c;
+}
+
+footer {
+    margin-top: 3rem;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #8aa0b2;
+}
+
+@media (max-width: 680px) {
+    body {
+        padding: 1.2rem;
+    }
+
+    .form-card {
+        padding: 1.2rem;
+    }
+
+    .items-grid {
+        gap: 1.2rem;
+    }
+}

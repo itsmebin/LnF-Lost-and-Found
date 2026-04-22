@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>LnF | lost & found</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>Lost and Found</h1>
+            <p>report what's lost · mark what's found</p>
+        </div>
+
+        <!-- Report Form (status defaults to LOST) -->
+        <div class="form-card">
+            <form id="reportForm">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Item name *</label>
+                        <input type="text" id="itemName" placeholder="e.g., Grey Tote Bag" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Location *</label>
+                        <input type="text" id="location" placeholder="Library, station, cafe..." required>
+                    </div>
+                    <div class="input-group">
+                        <label>Date *</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Contact info *</label>
+                        <input type="text" id="contact" placeholder="email or phone" required>
+                    </div>
+                    <div class="input-group full-width">
+                        <label>Description *</label>
+                        <textarea id="description" placeholder="color, brand, distinctive details..."
+                            required></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">✧ report lost item ✧</button>
+                <div id="formFeedback" class="form-feedback"></div>
+            </form>
+            <p style="font-size: 0.7rem; margin-top: 0.8rem; color: #7e95ab; text-align: center;">all new items are
+                marked as <strong style="color:#bc4a2c;">LOST</strong> · you can change status later</p>
+        </div>
+
+        <!-- items section -->
+        <div class="items-header">
+            <h2>📋 reported items</h2>
+            <div class="items-count" id="itemsCount">0 items</div>
+        </div>
+        <div id="itemsContainer" class="items-grid">
+            <!-- dynamic cards injected here -->
+        </div>
+        <footer>data stored locally · each lost item can be marked as found</footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
